@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Typecheck
+        run: yarn typecheck
+
+      - name: Test
+        run: yarn test
+
+      # Bundles the app (smoke check) and fails if src/uniwind-types.d.ts
+      # was committed stale — Metro regenerates it from src/global.css.
+      - name: Bundle & verify generated Uniwind types
+        run: |
+          yarn expo export --platform ios --output-dir /tmp/export-check
+          git diff --exit-code src/uniwind-types.d.ts
